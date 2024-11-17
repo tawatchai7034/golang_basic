@@ -1,0 +1,1 @@
+Golang write file testing55555
