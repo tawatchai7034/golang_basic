@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -13,46 +13,87 @@ type Employee struct {
 	EmpNum   string    `json:"EmpNum"`
 	EmpName  string    `json:"EmpName"`
 	HireDate time.Time `json:"HireDate"`
-	Salary   int64     `json:"Salary"`
+	Salary   float64   `json:"Salary"`
 	Position string    `json:"Position"`
 	DepNo    string    `json:"DepNo"`
 	HeadNo   string    `json:"HeadNo"`
 }
 
-// func query(db *sql.DB) {
-// 	var tag Employee
-// 	queryStr := "SELECT id,EmpNum FROM tb_employee"
-// 	if err := db.QueryRow(queryStr, 1).Scan(&tag.ID, &tag.EmpName); err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Println(tag)
-// }
-
 func main() {
 	// Open up our database connection.
-	db, err := sql.Open("mysql", "root:root(127.0.0.1:3306)/localdb")
+	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/localdb?parseTime=true")
 
 	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-	defer db.Close()
 
-	// Execute the query
-	results, err := db.Query("SELECT id,EmpNum FROM tb_employee")
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
+		fmt.Println("Database connect fail")
+	} else {
+		fmt.Println("Database connect success")
+		defer db.Close()
+		// var dataList []Employee
+		// dataList = getUser(db)
+		// if len(dataList) > 0 {
+		// 	for i := 0; i < len(dataList); i++ {
+		// 		data, err := json.Marshal(&dataList[i])
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		fmt.Println(string(data))
+		// 	}
+		// }
 
-	for results.Next() {
-		var tag Employee
-		// for each row, scan the result into our tag composite object
-		err = results.Scan(&tag.ID, &tag.EmpName)
+		fmt.Println(getUser(db))
+	}
+}
+
+func getUser(db *sql.DB) []Employee {
+	result, err := db.Query(`SELECT * FROM tb_employee`)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var userDataList []Employee
+	for result.Next() {
+		var user Employee
+		err := result.Scan(
+			&user.ID,
+			&user.EmpNum,
+			&user.EmpName,
+			&user.HireDate,
+			&user.Salary,
+			&user.Position,
+			&user.DepNo,
+			&user.HeadNo,
+		)
+
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
-		// and then print out the tag's Name attribute
-		log.Printf(tag.EmpName)
+		userDataList = append(userDataList, user)
 	}
+	return userDataList
+}
 
+func addUser(db *sql.DB) bool {
+	currentTime := time.Now()
+	result, err := db.Exec(`INSERT INTO tb_employee (EmpNum,EmpName,HireDate,Salary,Position,DepNo,HeadNo) VALUE(?,?,?,?,?,?,?)`, "tr", "eerr", currentTime, 50000, "", "", "")
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id, err := result.LastInsertId()
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
+		fmt.Println("item id:", id)
+	}
+	return true
+}
+
+func deleteUser(db *sql.DB) bool {
+	_, err := db.Exec(`DELETE FROM tb_employee WHERE id = ?`, 22)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return true
 }
