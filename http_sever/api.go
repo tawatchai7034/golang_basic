@@ -82,8 +82,9 @@ func ApiAuthentication(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		// bodybtye, err := ioutil.ReadAll(r.Body)
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
+			"sub": "user_id",
+			"exp": time.Now().Add(5 * time.Minute).Unix(),
 		})
 		key := os.Getenv("JWT_SECRET_KEY")
 
